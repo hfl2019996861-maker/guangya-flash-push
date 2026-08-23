@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>光鸭闪推 - 设置</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
+        </div>
+        <div>
+          <h1>光鸭闪推</h1>
+          <p class="sub">嗅探网页磁力链接，一键推送到光鸭云盘离线下载</p>
+        </div>
+      </header>
+
+      <!-- 账号 -->
+      <section class="card">
+        <h2>账号</h2>
+        <div id="accountStatus" class="account-status">检查中…</div>
+        <div class="btns">
+          <button id="btnOpenLogin" class="primary">打开网页版登录 / 同步</button>
+          <button id="btnRefresh" class="outline">立即续期 Token</button>
+          <button id="btnLogout" class="text-btn danger">退出插件登录态</button>
+        </div>
+        <p class="tip">在光鸭云盘网页版登录即可，插件自动同步登录状态；token 会自动续期，长时间提示登录过期时，重新打开一次网页版即可。</p>
+        <details class="advanced">
+          <summary>高级 · 手动导入 Token</summary>
+          <div class="import-row">
+            <input id="importToken" type="text" placeholder="粘贴 access_token（可选 refresh_token，空格分隔）" spellcheck="false" />
+            <button id="btnImport" class="primary">导入</button>
+          </div>
+        </details>
+      </section>
+
+      <!-- 推送 -->
+      <section class="card">
+        <h2>推送</h2>
+        <label class="switch-row">
+          <span class="sw-text">推送前确认<em>解析并显示资源名称 / 大小 / 文件数，确认后提交</em></span>
+          <span class="switch"><input type="checkbox" id="optConfirm" /><i></i></span>
+        </label>
+        <label class="switch-row">
+          <span class="sw-text">推送成功通知<em>推送完成后显示系统通知</em></span>
+          <span class="switch"><input type="checkbox" id="optNotify" /><i></i></span>
+        </label>
+        <label class="switch-row">
+          <span class="sw-text">自动续期登录<em>token 到期前自动续期，并同步回网页版登录态</em></span>
+          <span class="switch"><input type="checkbox" id="optAutoRefresh" /><i></i></span>
+        </label>
+      </section>
+
+      <!-- 嗅探 -->
+      <section class="card">
+        <h2>页面嗅探</h2>
+        <label class="switch-row">
+          <span class="sw-text">启用链接嗅探<em>关闭后所有页面都不再显示推送按钮</em></span>
+          <span class="switch"><input type="checkbox" id="optSniffEnabled" /><i></i></span>
+        </label>
+        <div class="type-grid">
+          <label class="check-row"><input type="checkbox" id="optSniffMagnet" />磁力链接</label>
+          <label class="check-row"><input type="checkbox" id="optSniffEd2k" />ed2k 链接</label>
+          <label class="check-row"><input type="checkbox" id="optSniffThunder" />迅雷链接</label>
+          <label class="check-row"><input type="checkbox" id="optSniffHttp" />HTTP 直链</label>
+        </div>
+        <label class="switch-row">
+          <span class="sw-text">嗅探纯文本链接<em>识别页面正文中未做成超链接的磁力文本</em></span>
+          <span class="switch"><input type="checkbox" id="optPlainText" /><i></i></span>
+        </label>
+        <label class="switch-row">
+          <span class="sw-text">显示右下角面板<em>展示「发现 N 个链接」与全部推送按钮</em></span>
+          <span class="switch"><input type="checkbox" id="optPanel" /><i></i></span>
+        </label>
+        <label class="area-label" for="optBlacklist">站点黑名单（每行一个，支持 * 通配）</label>
+        <textarea id="optBlacklist" rows="3" placeholder="*.example.com&#10;www.example.org"></textarea>
+      </section>
+
+      <!-- 调试 -->
+      <details class="card debug-details" id="debugCard">
+        <summary>开发者诊断</summary>
+        <label class="switch-row">
+          <span class="sw-text">启用调试日志<em>记录嗅探与凭证同步的内部状态，排查问题用</em></span>
+          <span class="switch"><input type="checkbox" id="optDebug" /><i></i></span>
+        </label>
+        <div id="debugPanels" style="display: none">
+          <h3>捕获消息</h3>
+          <pre id="captureLogPre" class="diag">(…)</pre>
+          <h3>嗅探诊断</h3>
+          <pre id="diagPre" class="diag">(…)</pre>
+          <h3>凭证结构</h3>
+          <pre id="shapePre" class="diag">(…)</pre>
+          <h3>用户信息原文</h3>
+          <pre id="userRawPre" class="diag">(…)</pre>
+        </div>
+      </details>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="options.js"></script>
+  </body>
+</html>
