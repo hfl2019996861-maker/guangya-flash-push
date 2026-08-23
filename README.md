@@ -94,13 +94,6 @@ git clone https://github.com/hfl2019996861-maker/guangya-flash-push.git
 
 </details>
 
-<details>
-<summary><b>和 115 闪推是什么关系？</b></summary>
-
-交互灵感来自 115 闪推，本项目面向光鸭云盘用户，由个人开发维护，与光鸭云盘官方无关。
-
-</details>
-
 ## 🛡️ 隐私声明
 
 - 凭证与设置仅保存在浏览器本地，**不上传任何服务器**
