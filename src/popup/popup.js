@@ -10,36 +10,25 @@ const send = (msg) => chrome.runtime.sendMessage(msg);
 
 const STATUS_TEXT = { 0: "等待中", 1: "下载中", 2: "已完成", 3: "已完成", 4: "失败" };
 
-const MAGNET_URI_RE = /magnet:\?[^\s"'<>]+/i;
-const MAGNET_HASH_RE = /xt=urn:btih:[a-z0-9]+/i;
-const ED2K_RE = /ed2k:\/\/\|file\|[^|]+\|\d+\|[a-f0-9]{32}\|[^"\s<>]*/i;
-const THUNDER_RE = /thunder:\/\/[A-Za-z0-9+/=]{10,}/i;
-
-function extractLink(text) {
-  const s = (text || "").trim();
-  const m = s.match(MAGNET_URI_RE);
-  if (m && MAGNET_HASH_RE.test(m[0])) return m[0];
-  const e = s.match(ED2K_RE) || s.match(THUNDER_RE);
-  if (e) return e[0];
-  if (/^https?:\/\/\S+$/i.test(s)) return s;
-  return null;
-}
-
-function thunderInner(url) {
-  try {
-    let d = atob(url.slice("thunder://".length));
-    if (d.startsWith("AA") && d.endsWith("ZZ")) d = d.slice(2, -2);
-    return d;
-  } catch (e) {
-    return url;
-  }
-}
+import { normalizeLink } from "../shared/link-parser.js";
 
 function showMsg(text, cls) {
   const el = $("pushMsg");
   el.textContent = text || "";
   el.className = "msg show " + (cls || "");
   if (!text) el.classList.remove("show");
+}
+
+function isTrustedAvatarUrl(url) {
+  try {
+    const parsed = new URL(url, location.origin);
+    return (
+      (parsed.protocol === "https:" && parsed.hostname === "guangyapan.com") ||
+      parsed.hostname.endsWith(".guangyapan.com")
+    );
+  } catch {
+    return false;
+  }
 }
 
 function hideConfirm() {
@@ -57,6 +46,32 @@ function fmtSize(n) {
   return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+function setListMessage(list, message) {
+  list.replaceChildren();
+  const li = document.createElement("li");
+  li.className = "empty";
+  li.textContent = message;
+  list.appendChild(li);
+}
+
+function formatRemainingDuration(expiresAt) {
+  const milliseconds = expiresAt - Date.now();
+  if (milliseconds <= 0) return "已过期";
+
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const days = Math.floor(milliseconds / day);
+  if (days >= 365) {
+    const years = Math.floor(days / 365);
+    const remainDays = days % 365;
+    return remainDays ? `${years} 年 ${remainDays} 天` : `${years} 年`;
+  }
+  if (days >= 1) return `${days} 天 ${Math.floor((milliseconds % day) / hour)} 小时`;
+  if (milliseconds >= hour) return `${Math.floor(milliseconds / hour)} 小时`;
+  return Math.max(1, Math.floor(milliseconds / minute)) + " 分钟";
+}
+
 // ---------- 登录状态 ----------
 
 async function loadState() {
@@ -69,9 +84,23 @@ async function loadState() {
   const el = $("userStatus");
   if (state?.loggedIn) {
     const name = state.userInfo?.nickname || `账号 ${(state.creds?.sub || "").slice(0, 8)}`.trim();
-    el.textContent = name || "已登录";
+    el.replaceChildren(name || "已登录");
     el.title = name || "已登录";
     el.className = "status ok";
+    const vipExpiresAt = state.userInfo?.vipExpiresAt;
+    let membershipText = "";
+    if (state.userInfo?.vip && vipExpiresAt) {
+      membershipText = `会员时长 剩余 ${formatRemainingDuration(vipExpiresAt)}`;
+    } else if (state.userInfo?.vip) {
+      membershipText = "会员生效中";
+    }
+    if (membershipText) {
+      const membership = document.createElement("span");
+      membership.className = "membership";
+      membership.textContent = membershipText;
+      el.append(membership);
+      el.title = `${el.title} · ${membershipText}`;
+    }
     const av = $("userAvatar");
     const avatarUrl = state.userInfo?.avatar;
     if (avatarUrl) {
@@ -82,7 +111,12 @@ async function loadState() {
       av.classList.add("hidden");
     }
   } else {
-    el.innerHTML = '未登录 · <a href="#" id="loginLink">去网页版登录</a>';
+    el.replaceChildren("未登录 · ");
+    const loginLink = document.createElement("a");
+    loginLink.href = "#";
+    loginLink.id = "loginLink";
+    loginLink.textContent = "去网页版登录";
+    el.appendChild(loginLink);
     el.className = "status err";
     $("loginLink").addEventListener("click", (e) => {
       e.preventDefault();
@@ -97,12 +131,12 @@ async function loadState() {
 let pendingPushUrl = null;
 
 async function pushUrl(url) {
-  const raw = extractLink(url);
-  if (!raw) {
+  const linkInfo = normalizeLink(url);
+  if (!linkInfo) {
     showMsg("未识别到有效的磁力/ed2k/迅雷/HTTP 链接", "err");
     return;
   }
-  const link = /^thunder:/i.test(raw) ? thunderInner(raw) : raw;
+  const link = linkInfo.inner || linkInfo.url;
   hideConfirm();
   showMsg("推送中…");
 
@@ -192,21 +226,27 @@ async function loadFpList() {
   $("fpPath").textContent = fp.stack.map((s) => s.name).join(" / ");
   $("fpUp").style.visibility = fp.stack.length > 1 ? "visible" : "hidden";
   const ul = $("fpList");
-  ul.innerHTML = '<li class="empty">加载中…</li>';
   const resp = await send({ type: "GY_LIST_FOLDERS", parentId: cur.id }).catch(() => null);
   if (!resp?.ok) {
-    ul.innerHTML = `<li class="empty">${resp?.needLogin ? "请先登录" : resp?.error || "加载失败"}</li>`;
+    setListMessage(ul, resp?.needLogin ? "请先登录" : resp?.error || "加载失败");
     return;
   }
   const folders = resp.folders || [];
-  ul.innerHTML = "";
   if (!folders.length) {
-    ul.innerHTML = '<li class="empty">此目录下没有子文件夹</li>';
+    setListMessage(ul, "此目录下没有子文件夹");
     return;
   }
   for (const f of folders) {
     const li = document.createElement("li");
-    li.innerHTML = `<span class="fp-ic">${SVG_FOLDER}</span><span class="fp-name"></span><span class="fp-arrow">${SVG_CHEVRON}</span>`;
+    const icon = document.createElement("span");
+    icon.className = "fp-ic";
+    icon.innerHTML = SVG_FOLDER;
+    const name = document.createElement("span");
+    name.className = "fp-name";
+    const arrow = document.createElement("span");
+    arrow.className = "fp-arrow";
+    arrow.innerHTML = SVG_CHEVRON;
+    li.append(icon, name, arrow);
     li.querySelector(".fp-name").textContent = f.name;
     li.title = f.name;
     li.addEventListener("click", async () => {
@@ -315,18 +355,16 @@ $("btnPushAll").addEventListener("click", async () => {
 
 async function loadTasks() {
   const ul = $("taskList");
-  ul.innerHTML = '<li class="empty">加载中…</li>';
   const resp = await send({ type: "GY_LIST_TASKS" }).catch(() => null);
   if (!resp?.ok) {
-    ul.innerHTML = `<li class="empty">${resp?.needLogin ? "登录后查看任务" : resp?.error || "加载失败"}</li>`;
+    setListMessage(ul, resp?.needLogin ? "登录后查看任务" : resp?.error || "加载失败");
     return;
   }
   const tasks = resp.tasks || [];
   if (!tasks.length) {
-    ul.innerHTML = '<li class="empty">暂无任务，去推送一个资源试试 🦆</li>';
+    setListMessage(ul, "暂无任务，去推送一个资源试试 🦆");
     return;
   }
-  ul.innerHTML = "";
   for (const t of tasks.slice(0, 8)) {
     const li = document.createElement("li");
     const name = document.createElement("span");

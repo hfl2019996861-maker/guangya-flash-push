@@ -4,7 +4,7 @@
 
 **嗅探网页中的磁力 / ed2k / 迅雷链接，一键推送到光鸭云盘离线下载**
 
-[![Version](https://img.shields.io/badge/version-2.1.1-orange)](https://github.com/hfl2019996861-maker/guangya-flash-push/releases)
+[![Version](https://img.shields.io/badge/version-2.1.5-orange)](https://github.com/hfl2019996861-maker/guangya-flash-push/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![Chrome](https://img.shields.io/badge/Chrome-110%2B-4285F4)](https://developer.chrome.com/docs/extensions/develop/migration)
 [![Manifest](https://img.shields.io/badge/Manifest-V3-34A853)](./manifest.json)

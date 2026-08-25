@@ -44,15 +44,22 @@ async function load() {
     el.className = "account-status ok";
     el.textContent = "";
     const avatar = state.userInfo?.avatar;
-    if (avatar) {
-      const img = document.createElement("img");
-      img.src = avatar;
-      img.alt = "";
-      img.className = "acc-avatar";
-      img.referrerpolicy = "no-referrer";
-      img.onerror = () => img.remove();
-      el.appendChild(img);
-    }
+    try {
+      const avatarUrl = new URL(avatar);
+      const trusted =
+        avatarUrl.protocol === "https:" &&
+        (avatarUrl.hostname === "guangyapan.com" ||
+          avatarUrl.hostname.endsWith(".guangyapan.com"));
+      if (trusted) {
+        const img = document.createElement("img");
+        img.src = avatarUrl.href;
+        img.alt = "";
+        img.className = "acc-avatar";
+        img.referrerpolicy = "no-referrer";
+        img.onerror = () => img.remove();
+        el.appendChild(img);
+      }
+    } catch {}
     el.appendChild(
       document.createTextNode(`✓ 已登录：${name || "光鸭云盘账号"}${rt}${exp}`)
     );

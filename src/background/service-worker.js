@@ -1,7 +1,9 @@
 // 光鸭闪推 - background service worker
 // 负责光鸭云盘 API 调用、登录凭证管理、推送任务、右键菜单与通知。
 
-const SW_BUILD = "2.0.0";
+import { normalizeLink } from "../shared/link-parser.js";
+
+const SW_BUILD = "2.1.5";
 const CLIENT_ID = "aMe-8VSlkrbQXpUR";
 
 async function debugEnabled() {
@@ -345,6 +347,35 @@ async function fetchUserInfo() {
     }
     return "";
   };
+  const pickNumber = (...vals) => {
+    for (const value of vals) {
+      const n = Number(value);
+      if (Number.isFinite(n)) return n;
+    }
+    return null;
+  };
+  const vipExpiresAt = (() => {
+    const values = [
+      data.vip_expire_time,
+      data.vip_expires_at,
+      data.vip_expired_at,
+      data.vip_expiration,
+      data.vip_end_time,
+      data.vipEndTime,
+      data.vipExpireTime,
+      data.vipExpiresAt,
+      data.membership_expire_time,
+      data.membership_expires_at,
+      data.member_expire_time,
+      data.member_expires_at,
+      p0.vip_expire_time,
+      p0.vip_expires_at,
+      p0.vipExpiredAt,
+    ];
+    const raw = pickNumber(...values);
+    if (!raw || raw <= 0) return null;
+    return raw > 1e12 ? raw : raw * 1000;
+  })();
   const phone = pick(data.phone_number, data.phone, p0.phone_number);
   const info = {
     nickname: pick(
@@ -360,7 +391,8 @@ async function fetchUserInfo() {
     avatar: pick(data.avatar, data.avatar_url, data.head_img_url, p0.avatar, p0.avatar_url),
     phone,
     sub: pick(data.sub),
-    vip: !!(data.vip || data.is_vip || data.isVip),
+    vip: !!(vipExpiresAt || data.vip || data.is_vip || data.isVip),
+    vipExpiresAt,
     fetchedAt: Date.now(),
   };
   if (!info.nickname && info.phone) {
@@ -488,33 +520,6 @@ async function pushFlow(url, { skipConfirm = false } = {}) {
 }
 
 // ---------- 链接识别（供右键菜单/弹窗复用） ----------
-
-const MAGNET_URI_RE = /magnet:\?[^\s"'<>]+/i;
-const MAGNET_HASH_RE = /xt=urn:btih:[a-z0-9]+/i;
-const ED2K_RE = /ed2k:\/\/\|file\|[^|]+\|\d+\|[a-f0-9]{32}\|[^"\s<>]*/i;
-const THUNDER_RE = /thunder:\/\/[A-Za-z0-9+/=]+/;
-
-export function normalizeLink(raw) {
-  const url = (raw || "").trim();
-  const m = url.match(MAGNET_URI_RE);
-  if (m && MAGNET_HASH_RE.test(m[0])) return { type: "magnet", url: m[0] };
-  const e = url.match(ED2K_RE);
-  if (e) return { type: "ed2k", url: e[0] };
-  const t = url.match(THUNDER_RE);
-  if (t) {
-    try {
-      let decoded = atob(t[0].slice("thunder://".length));
-      if (decoded.startsWith("AA") && decoded.endsWith("ZZ")) {
-        decoded = decoded.slice(2, -2);
-      }
-      return { type: "thunder", url: t[0], inner: decoded };
-    } catch (err) {
-      return { type: "thunder", url: t[0] };
-    }
-  }
-  if (/^https?:\/\/\S+$/i.test(url)) return { type: "http", url };
-  return null;
-}
 
 // ---------- 通知 / 徽标 ----------
 

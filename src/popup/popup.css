@@ -116,6 +116,18 @@ h1 {
   text-decoration: underline;
 }
 
+.status .membership {
+  color: #9a6700;
+}
+
+.status.ok::after {
+  content: "";
+  width: 1px;
+  height: 10px;
+  background: var(--line);
+  margin: 0 1px;
+}
+
 /* ---------- 通用 ---------- */
 
 .card {

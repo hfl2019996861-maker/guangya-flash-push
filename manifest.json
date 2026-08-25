@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "光鸭闪推 - 磁力推送到光鸭云盘",
-  "version": "2.1.2",
+  "version": "2.1.5",
   "description": "嗅探网页中的磁力/ed2k/迅雷链接，一键推送到光鸭云盘离线下载（云添加）。先登录网页版即可自动同步，支持自动续期与批量推送。",
   "author": "guangya-flash-push",
   "minimum_chrome_version": "110",
