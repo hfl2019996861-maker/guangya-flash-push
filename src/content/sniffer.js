@@ -605,10 +605,8 @@
             padding: 18px 20px; box-shadow: 0 20px 60px -12px rgba(28,27,25,.4);
             animation: gy-pop .18s ease-out;
           }
-          .head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-          .mark { width: 22px; height: 22px; border-radius: 6px; background: #1c1b19;
-                  display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-          h3 { margin: 0; font-size: 14.5px; font-weight: 650; color: #1c1b19; letter-spacing: .01em; }
+          .head { margin-bottom: 10px; }
+                    h3 { margin: 0; font-size: 14.5px; font-weight: 650; color: #1c1b19; letter-spacing: .01em; }
           pre {
             margin: 0 0 14px; white-space: pre-wrap; word-break: break-all;
             font: 11.5px/1.75 ui-monospace, Menlo, Consolas, monospace;
@@ -628,7 +626,7 @@
         </style>
         <div class="mask">
           <div class="card">
-            <div class="head"><span class="mark">' + BOLT + '</span><h3 part="title"></h3></div>
+            <div class="head"><h3 part="title"></h3></div>
             <pre part="body"></pre>
             <div class="row">
               <button class="cancel">取消</button>
