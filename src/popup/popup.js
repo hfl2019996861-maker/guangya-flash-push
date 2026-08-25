@@ -11,6 +11,7 @@ const send = (msg) => chrome.runtime.sendMessage(msg);
 const STATUS_TEXT = { 0: "等待中", 1: "下载中", 2: "已完成", 3: "已完成", 4: "失败" };
 
 import { normalizeLink } from "../shared/link-parser.js";
+import { GITHUB_URL, RELEASES_URL } from "../shared/app-meta.js";
 
 function showMsg(text, cls) {
   const el = $("pushMsg");
@@ -397,11 +398,45 @@ $("pushInput").addEventListener("keydown", (e) => {
 $("btnOptions").addEventListener("click", () => chrome.runtime.openOptionsPage());
 $("btnRefreshTasks").addEventListener("click", loadTasks);
 
+$("githubLink").addEventListener("click", (event) => {
+  event.preventDefault();
+  chrome.tabs.create({ url: GITHUB_URL });
+});
+
+$("btnCheckUpdate").addEventListener("click", async () => {
+  const button = $("btnCheckUpdate");
+  const previousText = button.textContent;
+  button.disabled = true;
+  button.textContent = "检查中…";
+  const resp = await send({ type: "GY_CHECK_UPDATE", force: true }).catch(() => null);
+  button.textContent = previousText;
+  button.disabled = false;
+  if (!resp?.ok) {
+    showMsg(resp?.error || "检查更新失败，请稍后重试", "err");
+    return;
+  }
+  if (!resp.update.updateAvailable) {
+    showMsg(`已是最新版本 v${resp.update.currentVersion}`, "ok");
+    return;
+  }
+  showMsg(`发现新版本 v${resp.update.latestVersion}`, "ok");
+  chrome.tabs.create({ url: resp.update.releaseUrl || RELEASES_URL });
+});
+
 try {
   chrome.action.setBadgeText({ text: "" });
 } catch (e) {}
 
 $("verInfo").textContent = `v${chrome.runtime.getManifest().version}`;
+
+(async () => {
+  const resp = await send({ type: "GY_CHECK_UPDATE" }).catch(() => null);
+  if (resp?.ok && resp.update?.updateAvailable) {
+    const button = $("btnCheckUpdate");
+    button.textContent = `更新 v${resp.update.latestVersion}`;
+    button.title = "发现新版本，点击打开 Release 页面";
+  }
+})();
 
 loadState();
 initFolderBtn();

@@ -162,7 +162,8 @@ button.primary:disabled {
   cursor: default;
 }
 
-button.outline {
+button.outline,
+a.outline {
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink-2);
@@ -171,7 +172,8 @@ button.outline {
   padding: 8px 15px;
 }
 
-button.outline:hover:not(:disabled) {
+button.outline:hover:not(:disabled),
+a.outline:hover {
   border-color: #d6d2ca;
   color: var(--ink);
 }
@@ -195,6 +197,13 @@ button.text-btn.danger:hover {
   font-size: 12px;
   color: var(--ink-3);
   line-height: 1.8;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 details.advanced {

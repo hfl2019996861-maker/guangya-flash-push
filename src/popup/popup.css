@@ -586,6 +586,15 @@ footer {
   letter-spacing: 0.02em;
 }
 
+.footer-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: inherit;
+  cursor: pointer;
+}
+
 .hidden {
   display: none !important;
 }

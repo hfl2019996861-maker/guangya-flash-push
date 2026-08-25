@@ -78,6 +78,15 @@
         <textarea id="optBlacklist" rows="3" placeholder="*.example.com&#10;www.example.org"></textarea>
       </section>
 
+      <section class="card">
+        <h2>项目与更新</h2>
+        <div class="btns">
+          <a id="optionsGithub" class="outline github-link" href="#" target="_blank" rel="noopener noreferrer">GitHub 项目主页</a>
+          <button id="btnOptionsCheckUpdate" class="primary">检查更新</button>
+        </div>
+        <p id="updateStatus" class="tip">可手动检测 GitHub 最新 Release。</p>
+      </section>
+
       <!-- 调试 -->
       <details class="card debug-details" id="debugCard">
         <summary>开发者诊断</summary>
@@ -98,6 +107,6 @@
       </details>
     </div>
     <div id="toast" class="toast"></div>
-    <script src="options.js"></script>
+    <script type="module" src="options.js"></script>
   </body>
 </html>

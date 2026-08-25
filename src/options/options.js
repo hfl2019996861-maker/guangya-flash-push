@@ -1,3 +1,5 @@
+import { GITHUB_URL } from "../shared/app-meta.js";
+
 // 光鸭闪推 - 设置页逻辑（发布版，改动自动保存）
 
 const $ = (id) => document.getElementById(id);
@@ -109,6 +111,26 @@ $("optBlacklist").addEventListener("input", () => {
 // ---------- 账号操作 ----------
 
 $("btnOpenLogin").addEventListener("click", () => send({ type: "GY_OPEN_LOGIN" }));
+
+$("optionsGithub").href = GITHUB_URL;
+
+$("btnOptionsCheckUpdate").addEventListener("click", async () => {
+  const button = $("btnOptionsCheckUpdate");
+  const status = $("updateStatus");
+  button.disabled = true;
+  button.textContent = "检查中…";
+  status.textContent = "正在请求 GitHub 最新 Release…";
+  const resp = await send({ type: "GY_CHECK_UPDATE", force: true }).catch(() => null);
+  button.disabled = false;
+  button.textContent = "检查更新";
+  if (!resp?.ok) {
+    status.textContent = `检查失败：${resp?.error || "网络异常"}`;
+    return;
+  }
+  status.textContent = resp.update.updateAvailable
+    ? `发现新版本 v${resp.update.latestVersion}，当前 v${resp.update.currentVersion}。`
+    : `已是最新版本 v${resp.update.currentVersion}。`;
+});
 
 $("btnRefresh").addEventListener("click", async () => {
   const btn = $("btnRefresh");

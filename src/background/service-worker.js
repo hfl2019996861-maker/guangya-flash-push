@@ -2,8 +2,14 @@
 // 负责光鸭云盘 API 调用、登录凭证管理、推送任务、右键菜单与通知。
 
 import { normalizeLink } from "../shared/link-parser.js";
+import {
+  APP_VERSION,
+  LATEST_RELEASE_API,
+  RELEASES_URL,
+  compareVersions,
+} from "../shared/app-meta.js";
 
-const SW_BUILD = "2.1.5";
+const SW_BUILD = "2.1.6";
 const CLIENT_ID = "aMe-8VSlkrbQXpUR";
 
 async function debugEnabled() {
@@ -28,6 +34,43 @@ const DEFAULT_SETTINGS = {
   blacklist: "", // 每行一个 host 通配，如 *.example.com
   debugMode: false, // 调试诊断面板与日志
 };
+
+async function checkForUpdate({ force = false } = {}) {
+  const cached = await getStore("updateStatus", null);
+  const cacheTtl = 30 * 60 * 1000;
+  if (
+    !force &&
+    cached?.checkedAt &&
+    Date.now() - cached.checkedAt < cacheTtl &&
+    cached.latestVersion
+  ) {
+    return {
+      ...cached,
+      currentVersion: APP_VERSION,
+      updateAvailable: compareVersions(cached.latestVersion, APP_VERSION) > 0,
+    };
+  }
+
+  const response = await fetch(LATEST_RELEASE_API, {
+    headers: { Accept: "application/vnd.github+json" },
+  });
+  if (!response.ok) throw new Error(`检查更新失败（HTTP ${response.status}）`);
+  const release = await response.json().catch(() => null);
+  const latestVersion = String(release?.tag_name || "").replace(/^v/i, "");
+  if (!latestVersion) throw new Error("未获取到最新版本号");
+
+  const status = {
+    checkedAt: Date.now(),
+    latestVersion,
+    releaseUrl: release.html_url || RELEASES_URL,
+  };
+  await setStore("updateStatus", status);
+  return {
+    ...status,
+    currentVersion: APP_VERSION,
+    updateAvailable: compareVersions(latestVersion, APP_VERSION) > 0,
+  };
+}
 
 // ---------- 工具 ----------
 
@@ -660,6 +703,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           return { ok: true, tasks: await listTasks() };
         } catch (e) {
           return { ok: false, error: e.message, needLogin: !!e.needLogin };
+        }
+
+      case "GY_CHECK_UPDATE":
+        try {
+          return { ok: true, update: await checkForUpdate({ force: !!msg.force }) };
+        } catch (e) {
+          return { ok: false, error: e.message };
         }
 
       case "GY_UPDATE_SETTINGS":
