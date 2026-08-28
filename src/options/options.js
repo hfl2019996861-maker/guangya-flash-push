@@ -7,6 +7,8 @@ const send = (msg) => chrome.runtime.sendMessage(msg);
 
 let settings = null;
 let blacklistTimer = 0;
+// 黑名单有未落盘的编辑时置位，期间禁止任何回写，防止轮询吞掉用户输入
+let blacklistDirty = false;
 
 const FIELD_MAP = {
   optConfirm: "confirmBeforePush",
@@ -73,9 +75,14 @@ async function load() {
   }
 
   for (const [id, key] of Object.entries(FIELD_MAP)) {
-    $(id).checked = !!settings[key];
+    const field = $(id);
+    // 正在操作的开关不回写，避免轮询打断用户点击
+    if (document.activeElement !== field) field.checked = !!settings[key];
   }
-  $("optBlacklist").value = settings.blacklist || "";
+  // 黑名单是自由输入区：只要还聚焦在此，就绝不覆盖（原逻辑 5s 一次轮询会吞掉正在输入的内容）
+  if (!blacklistDirty && document.activeElement !== $("optBlacklist")) {
+    $("optBlacklist").value = settings.blacklist || "";
+  }
 
   // 调试面板：入口常显（折叠态），日志区按开关
   $("debugPanels").style.display = settings.debugMode ? "" : "none";
@@ -87,6 +94,7 @@ async function savePatch(patch) {
   const resp = await send({ type: "GY_UPDATE_SETTINGS", patch }).catch(() => null);
   if (resp?.ok) {
     settings = resp.settings;
+    if ("blacklist" in patch) blacklistDirty = false;
     showToast("✓ 已保存");
   } else {
     showToast("保存失败，请重试", true);
@@ -104,8 +112,25 @@ for (const [id, key] of Object.entries(FIELD_MAP)) {
 }
 
 $("optBlacklist").addEventListener("input", () => {
+  blacklistDirty = true;
   clearTimeout(blacklistTimer);
   blacklistTimer = setTimeout(() => savePatch({ blacklist: $("optBlacklist").value.trim() }), 800);
+});
+
+// 失焦时立刻落盘，不等防抖，避免关页面丢改动
+$("optBlacklist").addEventListener("blur", () => {
+  if (!blacklistDirty) return;
+  clearTimeout(blacklistTimer);
+  savePatch({ blacklist: $("optBlacklist").value.trim() });
+});
+
+// 防丢数据兜底：页面关闭前若有未落盘编辑，同步写一次
+window.addEventListener("pagehide", () => {
+  if (!blacklistDirty) return;
+  clearTimeout(blacklistTimer);
+  send({ type: "GY_UPDATE_SETTINGS", patch: { blacklist: $("optBlacklist").value.trim() } }).catch(
+    () => {}
+  );
 });
 
 // ---------- 账号操作 ----------

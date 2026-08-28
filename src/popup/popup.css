@@ -1,17 +1,5 @@
 /* 光鸭闪推 · 墨与琥珀设计系统 */
-:root {
-  --paper: #faf9f7;
-  --card: #fff;
-  --ink: #1c1b19;
-  --ink-2: #57544e;
-  --ink-3: #9b978e;
-  --line: #e9e6e0;
-  --line-2: #f2f0eb;
-  --accent: #b45309;
-  --accent-soft: #fdf3e7;
-  --ok: #15803d;
-  --err: #b91c1c;
-}
+/* 设计令牌统一在 ../shared/theme.css，此处不再重复定义 */
 
 * {
   box-sizing: border-box;
@@ -41,7 +29,7 @@ header {
 .mark {
   width: 26px;
   height: 26px;
-  border-radius: 7px;
+  border-radius: var(--r-ctrl);
   background: var(--ink);
   display: flex;
   align-items: center;
@@ -86,7 +74,7 @@ h1 {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #c8c5bd;
+  background: var(--neutral);
   flex-shrink: 0;
 }
 
@@ -117,7 +105,7 @@ h1 {
 }
 
 .status .membership {
-  color: #9a6700;
+  color: var(--accent);
 }
 
 .status.ok::after {
@@ -133,7 +121,7 @@ h1 {
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-card);
   padding: 12px;
   margin-bottom: 9px;
 }
@@ -160,7 +148,7 @@ button {
   cursor: pointer;
   border: none;
   background: none;
-  border-radius: 7px;
+  border-radius: var(--r-ctrl);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -175,7 +163,7 @@ button:active:not(:disabled) {
 /* 主按钮：墨色实底 */
 .primary {
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   font-weight: 600;
   font-size: 12.5px;
   padding: 8px 15px;
@@ -183,7 +171,7 @@ button:active:not(:disabled) {
 }
 
 .primary:hover:not(:disabled) {
-  background: #33312d;
+  background: var(--ink-hover);
 }
 
 .primary:disabled {
@@ -207,7 +195,7 @@ button:active:not(:disabled) {
 }
 
 .outline:hover:not(:disabled) {
-  border-color: #d6d2ca;
+  border-color: var(--line-strong);
   color: var(--ink);
 }
 
@@ -231,7 +219,7 @@ button:active:not(:disabled) {
 .icon-btn {
   color: var(--ink-3);
   padding: 5px;
-  border-radius: 6px;
+  border-radius: var(--r-ctrl);
 }
 
 .icon-btn:hover {
@@ -250,10 +238,10 @@ button:active:not(:disabled) {
   flex: 1;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--r-ctrl);
   padding: 7.5px 10px;
   font-size: 12px;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   color: var(--ink);
   background: var(--card);
   outline: none;
@@ -261,12 +249,12 @@ button:active:not(:disabled) {
 }
 
 #pushInput:focus {
-  border-color: #d9a05b;
-  box-shadow: 0 0 0 2.5px rgba(180, 83, 9, 0.09);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2.5px var(--accent-ring);
 }
 
 #pushInput::placeholder {
-  color: #bfbcB3;
+  color: var(--neutral-strong);
   font-family: inherit;
 }
 
@@ -280,14 +268,14 @@ button:active:not(:disabled) {
   margin-top: 9px;
   padding: 6.5px 9px;
   border: 1px dashed var(--line);
-  border-radius: 7px;
+  border-radius: var(--r-ctrl);
   color: var(--ink-2);
   font-size: 12px;
   background: transparent;
 }
 
 .folder-btn:hover {
-  border-color: #d6d2ca;
+  border-color: var(--line-strong);
   border-style: solid;
   background: var(--card);
 }
@@ -316,7 +304,7 @@ button:active:not(:disabled) {
 .folder-picker {
   margin-top: 9px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-card);
   overflow: hidden;
 }
 
@@ -380,7 +368,7 @@ button:active:not(:disabled) {
 }
 
 .fp-list li .fp-arrow {
-  color: #cfccc4;
+  color: var(--neutral);
   display: flex;
 }
 
@@ -411,7 +399,7 @@ button:active:not(:disabled) {
 .confirm-box {
   margin-top: 9px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-card);
   padding: 10px;
   background: var(--paper);
   animation: rise 0.16s ease-out;
@@ -533,7 +521,7 @@ button:active:not(:disabled) {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #c8c5bd;
+  background: var(--neutral);
 }
 
 .task-status.s-done {
@@ -582,7 +570,7 @@ footer {
   gap: 5px;
   padding: 3px 0 2px;
   font-size: 10px;
-  color: #b5b2a9;
+  color: var(--neutral-strong);
   letter-spacing: 0.02em;
 }
 
@@ -597,4 +585,30 @@ footer {
 
 .hidden {
   display: none !important;
+}
+
+/* ---------- 暖调手工感 · 排版与层级 ---------- */
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* 宋体标题：层级靠字体差异拉开，而不是一味加大字号 */
+h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* 数据用等宽，进度百分比跳动时数字不抖 */
+.task-status,
+.fp-path,
+#pushInput {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 卡片统一用偏移硬阴影，模拟纸叠在纸上 */
+.card {
+  box-shadow: var(--shadow-card);
 }

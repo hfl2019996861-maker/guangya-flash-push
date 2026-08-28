@@ -1,17 +1,5 @@
 /* 光鸭闪推 · 墨与琥珀设计系统（设置页） */
-:root {
-  --paper: #faf9f7;
-  --card: #fff;
-  --ink: #1c1b19;
-  --ink-2: #57544e;
-  --ink-3: #9b978e;
-  --line: #e9e6e0;
-  --line-2: #f2f0eb;
-  --accent: #b45309;
-  --accent-soft: #fdf3e7;
-  --ok: #15803d;
-  --err: #b91c1c;
-}
+/* 设计令牌统一在 ../shared/theme.css，此处不再重复定义 */
 
 * {
   box-sizing: border-box;
@@ -45,7 +33,7 @@ header {
 .mark {
   width: 42px;
   height: 42px;
-  border-radius: 11px;
+  border-radius: var(--r-card);
   background: var(--ink);
   display: flex;
   align-items: center;
@@ -70,7 +58,7 @@ h1 {
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-card);
   padding: 20px 22px;
   margin-bottom: 13px;
 }
@@ -90,7 +78,7 @@ h2 {
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: 9px;
+  border-radius: var(--r-card);
   border: 1px solid var(--line);
   background: var(--paper);
   font-size: 13px;
@@ -102,15 +90,15 @@ h2 {
 }
 
 .account-status.ok {
-  border-color: #dbe8de;
+  border-color: var(--ok-border);
   color: var(--ok);
-  background: #f6faf7;
+  background: var(--ok-soft);
 }
 
 .account-status.err {
-  border-color: #f0d9d9;
+  border-color: var(--err-border);
   color: var(--err);
-  background: #fdf7f7;
+  background: var(--err-soft);
 }
 
 .acc-avatar {
@@ -120,7 +108,7 @@ h2 {
   border: 1px solid var(--line);
   object-fit: cover;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--card);
 }
 
 .btns {
@@ -136,7 +124,7 @@ button {
   cursor: pointer;
   border: none;
   background: none;
-  border-radius: 8px;
+  border-radius: var(--r-ctrl);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -146,7 +134,7 @@ button {
 
 button.primary {
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   font-weight: 600;
   font-size: 13px;
   padding: 9px 17px;
@@ -154,7 +142,7 @@ button.primary {
 }
 
 button.primary:hover:not(:disabled) {
-  background: #33312d;
+  background: var(--ink-hover);
 }
 
 button.primary:disabled {
@@ -174,7 +162,7 @@ a.outline {
 
 button.outline:hover:not(:disabled),
 a.outline:hover {
-  border-color: #d6d2ca;
+  border-color: var(--line-strong);
   color: var(--ink);
 }
 
@@ -237,18 +225,18 @@ details.advanced summary:hover,
 #importToken {
   flex: 1;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-ctrl);
   padding: 8px 12px;
   font-size: 12.5px;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   color: var(--ink);
   outline: none;
   transition: border-color 0.14s, box-shadow 0.14s;
 }
 
 #importToken:focus {
-  border-color: #d9a05b;
-  box-shadow: 0 0 0 2.5px rgba(180, 83, 9, 0.09);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2.5px var(--accent-ring);
 }
 
 /* ---------- 开关行 ---------- */
@@ -302,7 +290,7 @@ details.advanced summary:hover,
 .switch i {
   position: absolute;
   inset: 0;
-  background: #d9d6ce;
+  background: var(--line-strong);
   border-radius: 99px;
   transition: background 0.16s;
 }
@@ -367,7 +355,7 @@ details.advanced summary:hover,
 textarea {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--r-ctrl);
   padding: 9px 11px;
   font: 12px/1.7 ui-monospace, Menlo, Consolas, monospace;
   color: var(--ink);
@@ -378,8 +366,8 @@ textarea {
 }
 
 textarea:focus {
-  border-color: #d9a05b;
-  box-shadow: 0 0 0 2.5px rgba(180, 83, 9, 0.09);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2.5px var(--accent-ring);
 }
 
 /* ---------- 调试 ---------- */
@@ -405,7 +393,7 @@ pre.diag {
   line-height: 1.7;
   background: var(--paper);
   border: 1px solid var(--line-2);
-  border-radius: 8px;
+  border-radius: var(--r-ctrl);
   padding: 10px;
   overflow: auto;
   max-height: 150px;
@@ -422,11 +410,11 @@ pre.diag {
   bottom: 32px;
   transform: translateX(-50%) translateY(90px);
   background: var(--ink);
-  color: #fff;
-  border-radius: 9px;
+  color: var(--on-ink);
+  border-radius: var(--r-ctrl);
   padding: 9px 18px;
   font-size: 13px;
-  box-shadow: 0 8px 28px rgba(28, 27, 25, 0.35);
+  box-shadow: var(--shadow-pop);
   transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.3, 1);
   z-index: 99;
 }
@@ -437,4 +425,29 @@ pre.diag {
 
 .toast.err {
   background: var(--err);
+}
+
+/* ---------- 暖调手工感 · 排版与层级 ---------- */
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* 宋体标题：层级靠字体差异拉开 */
+h1,
+h2 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* h3 是调试面板的小标题，用黑体保持密度，避免满屏宋体 */
+h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.card {
+  box-shadow: var(--shadow-card);
 }

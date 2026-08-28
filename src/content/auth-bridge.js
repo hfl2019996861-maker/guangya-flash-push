@@ -202,7 +202,30 @@
   });
 
   capture();
-  setInterval(capture, 2000);
+
+  // 凭证同步主要靠 storage / focus 事件，轮询只是兜底。
+  // 后台标签页不轮询；长期没有变化就把间隔从 2s 逐步放宽到 30s。
+  const POLL_MIN = 2000;
+  const POLL_MAX = 30000;
+  let pollInterval = POLL_MIN;
+  let pollTimer = 0;
+
+  function schedulePoll() {
+    clearTimeout(pollTimer);
+    if (document.hidden) return;
+    pollTimer = setTimeout(() => {
+      const before = lastSnapshot;
+      capture();
+      // 有变化立刻回到高频，没变化就越来越懒
+      pollInterval = lastSnapshot === before ? Math.min(pollInterval * 2, POLL_MAX) : POLL_MIN;
+      schedulePoll();
+    }, pollInterval);
+  }
+
   window.addEventListener("storage", capture);
   window.addEventListener("focus", capture);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) schedulePoll();
+  });
+  schedulePoll();
 })();

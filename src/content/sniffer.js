@@ -8,8 +8,9 @@
   window.__gyFlashPushLoaded = true;
 
   // xt 参数可能不在磁力链接首位（如 magnet:?dn=xx&xt=urn:btih:...），两步提取
+  // btih = v1（SHA-1，40 位十六进制），btmh = v2（SHA-256，64 位），两者都要认
   const MAGNET_URI_RE = /magnet:\?[^\s"'<>]+/i;
-  const MAGNET_HASH_RE = /xt=urn:btih:([a-z0-9]+)/i;
+  const MAGNET_HASH_RE = /xt=urn:bt(?:ih|mh):([a-z0-9]{32,64})/i;
   const ED2K_RE = /ed2k:\/\/\|file\|([^|]+)\|(\d+)\|([a-f0-9]{32})\|[^"\s<>]*/i;
 
   const state = {
@@ -19,7 +20,20 @@
     shadowScanAt: 0,
     observer: null,
     shadowRoots: new Set(),
+    // 性能护栏：扫描冷却随"这一轮有没有新收获"自适应，避免长期空转
+    lastScanAt: 0,
+    scanCooldown: 3000,
+    shadowInterval: 10000,
+    pendingScan: false,
   };
+
+  // 全量扫描冷却：扫出新东西就回到 3s，连续空转最长放宽到 60s
+  const SCAN_MIN_COOLDOWN = 3000;
+  const SCAN_MAX_COOLDOWN = 60000;
+  // shadow DOM 穿透的单轮元素预算，防止大页面一次吃满主线程
+  const SHADOW_BUDGET = 4000;
+  const SHADOW_MIN_INTERVAL = 10000;
+  const SHADOW_IDLE_INTERVAL = 30000;
 
   // ---------- 设置 ----------
 
@@ -81,7 +95,7 @@
       if (m) {
         const h = m[0].match(MAGNET_HASH_RE);
         if (h) {
-          return { type: "magnet", url: m[0], key: "btih:" + h[1].toUpperCase(), label: m[0] };
+          return { type: "magnet", url: m[0], key: "bt:" + h[1].toUpperCase(), label: m[0] };
         }
       }
     }
@@ -205,7 +219,16 @@
     }
   }
 
+  // 宿主页面若由 React/Vue 之类框架接管，splitText / insertBefore 会破坏它的虚拟 DOM。
+  // 一旦改写失败就熔断：后续只把链接登记到面板，不再动页面结构，
+  // 行内按钮会消失，但"发现并推送"这个核心功能不丢。
+  let domRewriteBroken = false;
+
   function wrapTextNode(node, link, index) {
+    if (domRewriteBroken) {
+      registerLink(link);
+      return;
+    }
     if (index < 0) return;
     const parent = node.parentElement;
     if (!parent) return;
@@ -221,11 +244,18 @@
       span.appendChild(btn);
       bindButton(btn, link);
       after.remove();
-    } catch (e) {}
+    } catch (e) {
+      domRewriteBroken = true;
+      registerLink(link);
+    }
   }
 
-  // shadow DOM 穿透：发现 shadow root 后扫描其中的链接并挂监听
-  function discoverShadow(root, depth) {
+  // shadow DOM 穿透：发现 shadow root 后扫描其中的链接并挂监听。
+  // 查过的元素记在 WeakSet 里（元素被移除可自动回收），避免每轮重复读 shadowRoot；
+  // 单轮带元素预算，超大页面不会被一次吃满主线程。
+  const shadowChecked = new WeakSet();
+
+  function discoverShadow(root, depth, budget) {
     if (depth > 4 || !root || !root.querySelectorAll) return;
     let els;
     try {
@@ -234,6 +264,10 @@
       return;
     }
     for (const el of els) {
+      if (budget && budget.n <= 0) return; // 本轮到此为止，下一轮接着来
+      if (shadowChecked.has(el)) continue;
+      shadowChecked.add(el);
+      if (budget) budget.n -= 1;
       const sr = el.shadowRoot;
       if (sr) {
         if (!state.shadowRoots.has(sr)) {
@@ -243,7 +277,7 @@
           scanFields(sr);
           state.observer?.observe(sr, { childList: true, subtree: true });
         }
-        discoverShadow(sr, depth + 1);
+        discoverShadow(sr, depth + 1, budget);
       }
     }
   }
@@ -280,6 +314,7 @@
       reportDiag({ skipped: true });
       return;
     }
+    const before = state.found.size;
     try {
       scanAnchor(document.body);
       scanText(document.body);
@@ -287,12 +322,24 @@
     } catch (e) {
       state.lastError = String(e && e.stack || e).slice(0, 500);
     }
-    // shadow DOM 全量遍历较重，节流到 2 秒一次
+    const gained = state.found.size > before;
+
+    // 自适应冷却：扫出新东西就保持灵敏，连续空转就逐步拉长间隔。
+    // 最坏结果是"晚 60 秒才发现新链接"，不是漏掉——手动「重扫」不受此限。
+    state.scanCooldown = gained
+      ? SCAN_MIN_COOLDOWN
+      : Math.min((state.scanCooldown || SCAN_MIN_COOLDOWN) * 2, SCAN_MAX_COOLDOWN);
+    state.lastScanAt = Date.now();
+
+    // shadow DOM 穿透最重，独立节流
     const now = Date.now();
-    if (now - state.shadowScanAt > 2000) {
+    if (now - state.shadowScanAt > state.shadowInterval) {
       state.shadowScanAt = now;
+      const budget = { n: SHADOW_BUDGET };
       try {
-        discoverShadow(document.body, 0);
+        discoverShadow(document.body, 0, budget);
+        // 预算没用完说明本轮遍历完整，页面规模可控，后面可以更懒
+        state.shadowInterval = budget.n > 0 ? SHADOW_IDLE_INTERVAL : SHADOW_MIN_INTERVAL;
       } catch (e) {
         state.lastError = String(e && e.stack || e).slice(0, 500);
       }
@@ -300,9 +347,28 @@
     reportDiag();
   }
 
+  function runScanIdle() {
+    // 页面在后台就先记着，等切回前台再扫
+    if (document.hidden) {
+      state.pendingScan = true;
+      return;
+    }
+    // 塞进浏览器空闲时段，避免和页面自身的渲染抢主线程
+    const idle = window.requestIdleCallback;
+    if (typeof idle === "function") {
+      idle(() => scan(), { timeout: 1200 });
+    } else {
+      scan();
+    }
+  }
+
   function scheduleScan() {
     clearTimeout(state.scanTimer);
-    state.scanTimer = setTimeout(scan, 500);
+    // 冷却 = 当前间隔 - 距上次扫描已过去的时间，但至少等 300ms 让 DOM 稳定下来。
+    // 注意这里不能拿 SCAN_MIN_COOLDOWN 去 cap，否则膨胀后的间隔会永远被压回 3s。
+    const elapsed = Date.now() - state.lastScanAt;
+    const wait = Math.max(state.scanCooldown - elapsed, 300);
+    state.scanTimer = setTimeout(runScanIdle, wait);
   }
 
   // ---------- 推送 ----------
@@ -735,13 +801,33 @@
     scan();
     if (!state.observer) {
       state.observer = new MutationObserver((muts) => {
-        if (muts.some((m) => m.addedNodes.length)) scheduleScan();
+        // 只有"新增了不属于插件的元素"才值得重扫。
+        // 纯文本与属性变动直接忽略——它们占了 SPA 里绝大多数的 mutation，
+        // 而这类变动不可能凭空产生新的磁力链接。
+        let dirty = false;
+        for (const m of muts) {
+          for (const n of m.addedNodes) {
+            if (n.nodeType !== 1 || isOwnEl(n)) continue;
+            dirty = true;
+            break;
+          }
+          if (dirty) break;
+        }
+        if (dirty) scheduleScan();
       });
       state.observer.observe(document.documentElement, { childList: true, subtree: true });
     }
   }
 
   // ---------- 启动 ----------
+
+  // 后台标签页不扫，切回前台时补一次
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && state.pendingScan) {
+      state.pendingScan = false;
+      scheduleScan();
+    }
+  });
 
   loadSettings().then(() => {
     if (document.readyState === "loading") {

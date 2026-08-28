@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.1.6";
+export const APP_VERSION = "2.2.2";
 export const GITHUB_URL = "https://github.com/hfl2019996861-maker/guangya-flash-push";
 export const RELEASES_URL = `${GITHUB_URL}/releases`;
 export const LATEST_RELEASE_API =

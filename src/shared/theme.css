@@ -1,0 +1,207 @@
+/* 光鸭闪推 · 暖调手工感（Warm Craft）—— 公共设计令牌
+ *
+ * popup / options / 页面注入 UI 共用同一份变量。
+ *
+ * 设计立场：
+ *   1. 纸的材质 —— 底色偏奶油，描边一律用暖灰，不用冷灰。
+ *   2. 偏移硬阴影（2px 2px 0）代替柔和扩散，像纸叠在纸上。
+ *   3. 圆角刻意分四档（14/10/6/3）而不是统一一个值。
+ *      所有圆角一模一样，是 AI 出图最明显的指纹。
+ *   4. 标题用宋体、正文用黑体、数据用等宽，三层各司其职。
+ *   5. 手工痕迹只出现在极少数位置（贴纸微歪、票据双线、方块进度），
+ *      绝不铺噪点纹理——344px 里纹理只会显脏。
+ *
+ * 新增样式时优先取用现有令牌，确实不够再往上补，不要就地写色值。
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---------- 字体 ----------
+     宋体栈全部取系统已有字体，不打包任何字体文件，扩展体积不变。
+     macOS → Songti SC，Windows → 宋体/SimSun，兜底 Noto Serif SC。 */
+  --font-serif: "Songti SC", "STSong", "SimSun", "Noto Serif SC", "Source Han Serif CN", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "HarmonyOS Sans SC",
+    "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---------- 底色 ---------- */
+  --paper: #fbf6ee; /* 页面底：奶油纸 */
+  --paper-deep: #f3ebdd; /* 分组底、次级填充 */
+  --card: #fffcf6; /* 卡片，比纸底再提亮一档 */
+
+  /* ---------- 文字 ---------- */
+  --ink: #2a2018; /* 暖褐墨，不是纯黑 */
+  --ink-2: #6b5b49; /* 次要文字 */
+  --ink-3: #9c8b76; /* 辅助说明、占位 */
+  --on-ink: #fbf6ee; /* 铺在 --ink 实底上的文字，必须成对使用 */
+
+  /* ---------- 描边 ---------- */
+  --line: #e4d8c5;
+  --line-2: #efe5d6;
+  --line-strong: #cdbea6; /* hover 边框、开关轨道、虚线 */
+
+  /* ---------- 品牌 ---------- */
+  --accent: #a8561b; /* 焦糖琥珀 */
+  --accent-hover: #8a4312;
+  --accent-soft: #f8ebd9; /* 选中行、板块头 */
+  --accent-border: #d9a05b; /* 聚焦边框 */
+  --accent-ring: rgba(168, 86, 27, 0.14);
+  --bolt: #e89b2c; /* 闪电与主行动，比 accent 亮一档 */
+
+  /* ---------- 语义 ---------- */
+  --ok: #5f7a4b; /* 苔绿 */
+  --ok-soft: #edf2e7;
+  --ok-border: #cfdcc2;
+  --err: #b4503a; /* 砖红 */
+  --err-soft: #faede9;
+  --err-border: #ebd2c9;
+  --stamp: #c25b3d; /* 印章红，只用于贴纸 */
+
+  /* ---------- 中性 ---------- */
+  --neutral: #cdbea6; /* 圆点、箭头等装饰 */
+  --neutral-strong: #b5a894; /* placeholder、页脚小字 */
+  --ink-hover: #423225; /* --ink 实底的 hover 态 */
+
+  /* ---------- 尺度 ----------
+     四档圆角刻意不统一：外框 / 卡片 / 控件 / 贴纸 */
+  --r-sheet: 14px;
+  --r-card: 10px;
+  --r-ctrl: 6px;
+  --r-tag: 3px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --tap: 32px; /* 可点击元素最小高度 */
+
+  /* ---------- 阴影 ----------
+     用偏移硬阴影模拟纸叠，不用大范围柔和扩散 */
+  --shadow-card: 2px 2px 0 rgba(90, 66, 40, 0.14);
+  --shadow-pop: 3px 3px 0 rgba(90, 66, 40, 0.16);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+/* 跟随系统深色。注意 --ink 在这里反转为浅色，
+   所以任何 background: var(--ink) 的元素，文字必须配 var(--on-ink)。 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1a1613;
+    --paper-deep: #221c17;
+    --card: #251f19;
+
+    --ink: #f2e8d8;
+    --ink-2: #b3a48e;
+    --ink-3: #857761;
+    --on-ink: #1a1613;
+
+    --line: #3a3128;
+    --line-2: #2e2721;
+    --line-strong: #4e4437;
+
+    --accent: #db9050;
+    --accent-hover: #eba564;
+    --accent-soft: #33251a;
+    --accent-border: #8a5a2e;
+    --accent-ring: rgba(219, 144, 80, 0.26);
+    --bolt: #f2b44e;
+
+    --ok: #8fb07a;
+    --ok-soft: #232a1d;
+    --ok-border: #38452e;
+    --err: #e08572;
+    --err-soft: #33211d;
+    --err-border: #4e322c;
+    --stamp: #d97a5c;
+
+    --neutral: #4e4437;
+    --neutral-strong: #6b6255;
+    --ink-hover: #d4c8b5;
+
+    --shadow-card: 2px 2px 0 rgba(0, 0, 0, 0.4);
+    --shadow-pop: 3px 3px 0 rgba(0, 0, 0, 0.5);
+    --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+}
+
+/* ---------- 排版工具类 ---------- */
+.serif {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 票据双线：老收据上的裁切标记 */
+.rule-double {
+  height: 3px;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line);
+}
+
+/* 便签式提示条：左侧色条 + 纸底 + 偏移阴影 */
+.note {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 9px 11px;
+  border-radius: var(--r-ctrl);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  font-size: 11px;
+}
+
+.note::before {
+  content: "";
+  width: 3px;
+  align-self: stretch;
+  border-radius: var(--r-tag);
+  background: var(--accent);
+  flex-shrink: 0;
+  margin: -9px 0 -9px -11px;
+}
+
+.note.ok::before {
+  background: var(--ok);
+}
+.note.err::before {
+  background: var(--err);
+}
+
+/* ---------- 键盘可达性 ----------
+   用 :where() 把优先级压到 0，任何地方想单独定义焦点样式都能覆盖。 */
+:where(button, a, input, textarea, select, label, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-ctrl);
+}
+
+/* ---------- 动效降级 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- 仅供读屏 ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

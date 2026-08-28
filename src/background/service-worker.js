@@ -9,7 +9,7 @@ import {
   compareVersions,
 } from "../shared/app-meta.js";
 
-const SW_BUILD = "2.1.6";
+const SW_BUILD = "2.2.2";
 const CLIENT_ID = "aMe-8VSlkrbQXpUR";
 
 async function debugEnabled() {

@@ -356,6 +356,8 @@ $("btnPushAll").addEventListener("click", async () => {
 
 async function loadTasks() {
   const ul = $("taskList");
+  // 先给加载态，避免请求慢时列表看起来像卡住了
+  setListMessage(ul, "加载中…");
   const resp = await send({ type: "GY_LIST_TASKS" }).catch(() => null);
   if (!resp?.ok) {
     setListMessage(ul, resp?.needLogin ? "登录后查看任务" : resp?.error || "加载失败");
@@ -366,6 +368,9 @@ async function loadTasks() {
     setListMessage(ul, "暂无任务，去推送一个资源试试 🦆");
     return;
   }
+  // 关键：渲染前必须清空旧节点，否则每次刷新都往列表后面追加一份
+  ul.replaceChildren();
+  const fragment = document.createDocumentFragment();
   for (const t of tasks.slice(0, 8)) {
     const li = document.createElement("li");
     const name = document.createElement("span");
@@ -385,8 +390,9 @@ async function loadTasks() {
         : STATUS_TEXT[st] || `状态 ${st}`;
     status.append(dot, label);
     li.append(name, status);
-    ul.appendChild(li);
+    fragment.appendChild(li);
   }
+  ul.appendChild(fragment);
 }
 
 // ---------- 事件绑定与启动 ----------
